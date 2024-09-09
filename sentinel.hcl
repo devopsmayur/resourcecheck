@@ -1,4 +1,4 @@
 policy "restrict-gce-machine-type" {
-    source = "./restrict-gcp-instance-image-a.sentinel"
+    source = "./restrict-gce-machine-type.sentinel"
     enforcement_level = "hard-mandatory""
 }
