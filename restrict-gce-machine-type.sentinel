@@ -1,26 +1,27 @@
 # This policy uses the Sentinel tfplan/v2 import to require that
 # all GCE instances have machine types from an allowed list
 
-# Import common-functions/tfplan-functions/tfplan-functions.sentinel
-# with alias "plan"
+# Import the tfplan/v2 module
 import "tfplan/v2" as tfplan
 
 # Allowed GCE Instance Types
-# Include "null" to allow missing or computed values
 allowed_types = ["n1-standard-2", "n1-standard-4"]
 
-# Get all GCE instances
-allGCEInstances = plan.find_resources("google_compute_instance")
+# Get all GCE instances from the Terraform plan
+allGCEInstances = filter tfplan.resources as r {
+  r.type is "google_compute_instance" and
+  r.applied is not null
+}
 
-# Filter to GCE instances with violations
-# Warnings will be printed for all violations since the last parameter is true
-violatingGCEInstances = plan.filter_attribute_not_in_list(allGCEInstances,
-                        "machine_type", allowed_types, true)
+# Filter GCE instances that do not use the allowed machine types
+violatingGCEInstances = filter allGCEInstances as instance {
+  instance.applied.values.machine_type not in allowed_types
+}
 
-# Count violations
-violations = length(violatingGCEInstances["messages"])
+# Count the number of violations
+violations = length(violatingGCEInstances)
 
-# Main rule
+# Main rule: Ensure there are no violations
 main = rule {
   violations is 0
 }
